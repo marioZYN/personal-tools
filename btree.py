@@ -128,12 +128,25 @@ class BTree():
                 node.delete(key)
             else:
                 parent = path[-2]
-                bro = self.rich_brother(parent)
+                child_idx = 0
+                for child in parent.pointers:
+                    if key in child.keys:
+                        break
+                    child_idx += 1
+                bro = self.rich_brother(parent, child_idx)
                 if bro:
-                    pass    
+                    node.delete(key)
+                    bro_idx = parent.pointers.index(bro)
+                    if bro_idx < child_idx:
+                        node.add(parent.keys[bro_idx])
+                        parent.keys[bro_idx] = bro.keys[-1]
+                        bro.delete(bro.keys[-1])
+                    else:
+                        node.add(parent.keys[child_idx])
+                        parent.keys[child_idx] = bro.keys[0]
+                        bro.delete(bro.keys[0])
                 else:
                     pass
-            
         else:
             i = node.keys.index(key)
             child = node.pointers[i+1]
@@ -164,9 +177,26 @@ class BTree():
             i += 1
 
         return None, 'not_found', path
-
-
     
+    def rich_brother(self, parent, child_idx):
+        if child_idx == 0:
+            if len(parent.pointers) > 1 and len(parent.pointers[1].keys) > parent.pointers[1].minimum:
+                return parent.pointers[1]
+            else:
+                return None
+        elif child_idx == len(parent.pointers) - 1:
+            if len(parent.pointers) > 1 and len(parent.pointers[-2].keys) > parent.pointers[-2].minimum:
+                return parent.pointers[-2]
+            else:
+                return None
+        else:
+            if len(parent.pointers[child_idx-1].keys) > parent.pointers[child_idx-1].minimum:
+                return parent.pointers[child_idx-1]
+            elif len(parent.pointers[child_idx+1].keys) > parent.pointers[child_idx+1].minimum:
+                return parent.pointers[child_idx+1]
+            else:
+                return None
+        
     def merge(self, node1, node2):
         keys1 = node1.keys
         key2 = node2.keys[0]
@@ -223,4 +253,6 @@ if __name__ == '__main__':
     print('delete testing.....')
     t.delete('H')
     t.delete('T')
+    print(t)
+    t.delete('R')
     print(t)
